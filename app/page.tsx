@@ -1,58 +1,62 @@
 "use client";
 
 import { useState } from "react";
-
+import { Language } from "@/types/language";
 import Chat from "@/components/chat/Chat";
 import LanguageSelector from "@/components/language/LanguageSelector";
 
 export default function Home() {
-  const [nativeLanguage, setNativeLanguage] = useState("");
-  const [learningLanguage, setLearningLanguage] = useState("");
+  const [nativeLanguage, setNativeLanguage] = useState<Language | null>(null);
+  const [learningLanguage, setLearningLanguage] = useState<Language | null>(
+    null,
+  );
 
-  const isChatEnabled =
-    nativeLanguage !== "" &&
-    learningLanguage !== "";
+  const isChatEnabled = nativeLanguage !== null && learningLanguage !== null;
 
   return (
     <main className="min-h-screen bg-zinc-950 text-white">
-      <div className="mx-auto flex min-h-screen max-w-5xl flex-col px-6 py-10">
+      <div className="mx-auto flex min-h-screen max-w-5xl flex-col px-4 py-6 md:px-6">
+        {/* Header */}
 
-        {/* Hero */}
-        <section className="mb-8 text-center">
-          <h1 className="text-5xl font-bold tracking-tight">
-            AI Language Tutor
+        <header className="mb-6 text-center">
+          <h1 className="text-xl font-bold md:text-3xl">
+            🌍 AI Language Tutor
           </h1>
 
-          <p className="mx-auto mt-4 max-w-2xl text-zinc-400">
-            Helping refugees communicate confidently in a new country through
-            natural AI conversations.
+          <p className="mt-2 text-sm text-zinc-400 md:text-base">
+            Helping refugees communicate confidently through AI.
           </p>
-        </section>
+        </header>
 
-        {/* Language Card */}
-        <section className="mb-6 rounded-2xl border border-zinc-800 bg-zinc-900 p-4 shadow-xl">
+        {/* Language Toolbar */}
 
-          <div className="grid gap-6 md:grid-cols-2">
-
+        <section className="mb-5 rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
+          <div className="grid gap-4 md:grid-cols-2">
             <LanguageSelector
-              label="🌍 Native Language"
+              label="🌍 Your Language"
               value={nativeLanguage}
               onChange={setNativeLanguage}
+              exclude={learningLanguage?.code}
             />
 
             <LanguageSelector
-              label="📚 Learning Language"
+              label="📚 Language to Learn"
               value={learningLanguage}
               onChange={setLearningLanguage}
+              exclude={nativeLanguage?.code}
             />
-
           </div>
-
         </section>
 
         {/* Chat */}
-        <Chat enabled={isChatEnabled} />
 
+        <div className="flex-1">
+          <Chat
+            enabled={isChatEnabled}
+            nativeLanguage={nativeLanguage}
+            learningLanguage={learningLanguage}
+          />
+        </div>
       </div>
     </main>
   );

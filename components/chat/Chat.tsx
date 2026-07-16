@@ -1,55 +1,103 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { useEffect, useRef, useState } from "react";
+import { Bot, Sparkles } from "lucide-react";
+
+import ChatInput from "./ChatInput";
+import ChatMessages from "./ChatMessages";
+
 import { Message } from "@/types/chat";
-import { Bot, SendHorizonal, Sparkles } from "lucide-react";
-import { useState } from "react";
+
+import { Language } from "@/types/language";
 
 interface ChatProps {
   enabled: boolean;
+  nativeLanguage: Language | null;
+  learningLanguage: Language | null;
 }
 
-export default function Chat({ enabled }: ChatProps) {
+export default function Chat({
+  enabled,
+  nativeLanguage,
+  learningLanguage,
+}: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
-
   const [input, setInput] = useState("");
-
   const [loading, setLoading] = useState(false);
-  const sendMessage = () => {
+
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [messages, loading]);
+
+  const sendMessage = async () => {
     if (!input.trim() || loading || !enabled) return;
 
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       role: "user",
       content: input,
     };
 
     setMessages((prev) => [...prev, userMessage]);
-
     setInput("");
-
     setLoading(true);
+    if (!nativeLanguage || !learningLanguage) {
+      setLoading(false);
+      return;
+    }
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          nativeLanguage,
+          learningLanguage,
+          message: userMessage.content,
+        }),
+      });
 
-    setTimeout(() => {
+      if (!response.ok) {
+        throw new Error("Failed to get AI response");
+      }
+
+      const data = await response.json();
+
       const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: crypto.randomUUID(),
         role: "assistant",
-        content: "This is a demo AI response.",
+        content: data.message.content,
+        createdAt: new Date(),
       };
 
       setMessages((prev) => [...prev, aiMessage]);
+    } catch (error) {
+      console.error(error);
 
+      const aiMessage: Message = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: "Sorry, something went wrong. Please try again.",
+        createdAt: new Date(),
+      };
+
+      setMessages((prev) => [...prev, aiMessage]);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
+
   return (
     <div className="flex h-[650px] flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-2xl">
-      {/* Header */}
       <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-4">
         <div className="flex items-center gap-3">
           <div className="rounded-xl bg-blue-600 p-2">
-            <Bot size={20} className="text-white" />
+            <Bot size={20} />
           </div>
 
           <div>
@@ -62,74 +110,20 @@ export default function Chat({ enabled }: ChatProps) {
         <Sparkles className="text-yellow-400" size={18} />
       </div>
 
-      {/* Chat Area */}
-      <div className="flex flex-1 items-center justify-center bg-zinc-950 px-10">
-        <div className="max-w-xl text-center">
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-blue-600/20">
-            <Bot size={42} className="text-blue-400" />
-          </div>
+      <ChatMessages
+        enabled={enabled}
+        messages={messages}
+        loading={loading}
+        messagesEndRef={messagesEndRef}
+      />
 
-          {enabled ? (
-            <>
-              <h2 className="mb-4 text-3xl font-bold">You're Ready 🚀</h2>
-
-              <p className="text-lg leading-8 text-zinc-400">
-                Start chatting in any language.
-                <br />
-                I'll understand your message and help you learn naturally.
-              </p>
-            </>
-          ) : (
-            <>
-              <h2 className="mb-4 text-3xl font-bold">Welcome 👋</h2>
-
-              <p className="text-lg leading-8 text-zinc-400">
-                Select your native language and the language you want to learn.
-                <br />
-                Your AI tutor will then guide every conversation.
-              </p>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Input */}
-      <div className="border-t border-zinc-800 bg-zinc-900 p-5">
-        <div className="flex items-end gap-3">
-          <Textarea
-            disabled={!enabled}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={
-              enabled ? "Ask me anything..." : "Select both languages first..."
-            }
-            rows={2}
-            className="
-    resize-none
-    rounded-xl
-    border-zinc-700
-    bg-zinc-950
-    text-white
-    placeholder:text-zinc-500
-    focus-visible:ring-blue-500
-  "
-          />
-
-          <Button
-            disabled={!enabled}
-            size="icon"
-            className="
-              h-12
-              w-12
-              rounded-xl
-              bg-blue-600
-              hover:bg-blue-500
-            "
-          >
-            <SendHorizonal size={18} />
-          </Button>
-        </div>
-      </div>
+      <ChatInput
+        enabled={enabled}
+        loading={loading}
+        input={input}
+        setInput={setInput}
+        sendMessage={sendMessage}
+      />
     </div>
   );
 }
