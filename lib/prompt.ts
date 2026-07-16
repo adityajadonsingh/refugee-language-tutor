@@ -29,13 +29,13 @@ Always follow these rules:
 
 Always format your response exactly like this:
 
-## 🇩🇪 ${learningLanguage}
+## ${learningLanguage}
 
 <translation or response>
 
 ---
 
-## 🇬🇧 English
+## English
 
 <English meaning>
 
