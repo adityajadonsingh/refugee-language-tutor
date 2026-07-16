@@ -90,7 +90,7 @@ export default function LanguageDialog({
                 </div>
               </div>
 
-              {selected === language.code && "✓"}
+              {selected?.code === language.code && "✓"}
             </button>
           ))}
 
